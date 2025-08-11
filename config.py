@@ -29,8 +29,8 @@ class Config:
     INFURA_API_KEY = "YOUR_INFURA_API_KEY"
     INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"
 
-    ALCHEMY_API_KEY = "YOUR_ALCHEMY_API_KEY"
-    ALCHEMY_API_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+    INFURA_API_KEY = "6aaea4c2d2be42bf89c660d07863fea5"
+    INFURA_API_URL = f"https://eth-mainnet.g.alchemy.com/v2/{INFURA_API_KEY}"
 
     TRONGRID_API_URL = "https://api.trongrid.io"
 

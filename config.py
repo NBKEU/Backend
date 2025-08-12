@@ -27,7 +27,7 @@ class Config:
     # --- CRYPTOCURRENCY PAYOUT SETTINGS ---
     # API keys and endpoints for blockchain providers
     INFURA_API_KEY = "6aaea4c2d2be42bf89c660d07863fea5"
-    INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_URL}"
+    INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"
 
     INFURA_API_KEY = "6aaea4c2d2be42bf89c660d07863fea5"
     INFURA_API_URL = f"https://mainnet.infura.io/v3/6aaea4c2d2be42bf89c660d07863fea5{INFURA_API_URL}"

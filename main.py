@@ -43,7 +43,7 @@ class TCPServer(threading.Thread):
                     logger.error(f"TCP accept error: {e}")
                 break
 
-  def handle_client(self, conn):  # FIX: Add 'conn' to the method signature
+    def handle_client(self, conn):
         try:
             while True:
                 # Receive data from the terminal (ISO 8583 message)

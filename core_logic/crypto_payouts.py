@@ -72,7 +72,10 @@ def _create_erc20_transaction(to_address, amount_in_wei):
     }
 
     # Sign the transaction with your private key
-     return signed_txn.raw_transaction.hex()
+    signed_txn = w3.eth.account.sign_transaction(transaction, sender_private_key)
+    
+    # Return the raw, signed transaction hex string
+    return signed_txn.raw_transaction.hex()
 def payout_erc20(to_address, amount):
     """
     Initiates an ERC-20 crypto payout via Infura or Alchemy.

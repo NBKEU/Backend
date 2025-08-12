@@ -1,7 +1,8 @@
 Flask
 requests
-starkbank_iso8583
+starkbank-iso8583
+gunicorn
 flask-cors
+psycopg2-binary
 web3
 tronpy
-gunicorn

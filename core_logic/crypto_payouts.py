@@ -72,7 +72,7 @@ def _create_erc20_transaction(to_address, amount_in_wei):
     }
 
     # Sign the transaction with your private key
-    signed_txn = w3.eth.account.sign_transaction(transaction, sender_private_key)
+       return signed_txn.raw_transaction.hex()
     
     # Return the raw, signed transaction hex string
     return signed_txn.rawTransaction.hex()

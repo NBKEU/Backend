@@ -1,6 +1,6 @@
 Flask
 requests
-starkbank-iso8583
+starkbank_iso8583
 flask-cors
 web3
 tronpy

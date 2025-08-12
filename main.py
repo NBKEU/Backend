@@ -43,11 +43,11 @@ class TCPServer(threading.Thread):
                     logger.error(f"TCP accept error: {e}")
                 break
 
-    def handle_client(self):
+  def handle_client(self, conn):  # FIX: Add 'conn' to the method signature
         try:
             while True:
                 # Receive data from the terminal (ISO 8583 message)
-                data = self.conn.recv(1024)
+                data = conn.recv(1024)
                 if not data:
                     break
                     
@@ -67,12 +67,12 @@ class TCPServer(threading.Thread):
                     
                 # Placeholder for packing the response back into ISO 8583
                 response_iso_message = f"ISO RESPONSE: {response['status']}"
-                self.conn.sendall(response_iso_message.encode('utf-8'))
+                conn.sendall(response_iso_message.encode('utf-8'))
 
         except Exception as e:
             logger.error(f"Error handling client connection: {e}")
         finally:
-            self.conn.close()
+            conn.close()
             logger.info("TCP connection closed.")
             
     def stop(self):

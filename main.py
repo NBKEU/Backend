@@ -1,15 +1,17 @@
 # File: main.py
-# This is the main entry point for your production-grade payment processing backend.
-# It initializes and runs both the TCP listener and the Flask web API concurrently.
+# This is the corrected main entry point for your production-grade Flask backend.
+# It is designed to be run by Gunicorn. The TCP listener should be a separate service.
 
 import threading
 import socket
 import logging
-from flask import Flask
-from werkzeug.serving import make_server
+import os
+from flask import Flask, jsonify
+from flask_cors import CORS # Import CORS to allow communication from your frontend URL
 import time
-from starkbank_iso8583 import parser # Import the ISO 8583 parser
+from starkbank_iso8583 import parser
 
+# Assuming a flat project structure for demonstration
 from config import Config
 from api_layer.routes import api_bp
 from core_logic import transactions
@@ -19,107 +21,62 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('main_app')
 
-# --- TCP Server for Android Terminals ---
-class TCPServer(threading.Thread):
-    def __init__(self, host, port):
-        super().__init__()
-        self.host = host
-        self.port = port
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server_socket.bind((self.host, self.port))
-        self.is_running = True
+# --- Create the Flask App Object ---
+# This app object is what Gunicorn will use to run your API.
+app = Flask(__name__)
+# Enable CORS for all routes on the blueprint to allow your frontend to connect
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.register_blueprint(api_bp)
 
-    def run(self):
-        self.server_socket.listen(5)
-        logger.info(f"TCP Listener started on {self.host}:{self.port}")
-        while self.is_running:
-            try:
-                conn, addr = self.server_socket.accept()
-                logger.info(f"Accepted TCP connection from {addr}")
-                client_handler = threading.Thread(target=self.handle_client, args=(conn,))
-                client_handler.start()
-            except socket.error as e:
-                if self.is_running:
-                    logger.error(f"TCP accept error: {e}")
-                break
+# A simple root route to confirm the API is running
+@app.route('/')
+def home():
+    """
+    Returns a simple message to confirm the API is running.
+    """
+    return jsonify({'message': 'Payment processing API is running correctly.'}), 200
 
-    def handle_client(self, conn):
+# --- TCP Listener for Android Terminals ---
+# In a real production environment, this should be run as a separate Render service
+# because Gunicorn is a single-threaded web server that cannot manage other services.
+def run_tcp_server():
+    host = os.environ.get('TCP_HOST', '0.0.0.0')
+    port = int(os.environ.get('TCP_PORT', 9000))
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+    logger.info(f"TCP Listener started on {host}:{port}")
+
+    while True:
         try:
-            while True:
-                data = conn.recv(1024)
-                if not data:
-                    break
-                
-                logger.info(f"Received raw data from TCP: {data.decode()}")
-                
-                # --- CORRECTED: Use the ISO 8583 parser to handle real data ---
-                # This is the production-grade way to handle data from the terminal.
+            conn, addr = server_socket.accept()
+            logger.info(f"Accepted TCP connection from {addr}")
+            
+            # --- Corrected Logic for handling the ISO message ---
+            data = conn.recv(1024)
+            if data:
                 try:
                     iso_message = parser.unpack(data.decode('utf-8'))
                     logger.info(f"Parsed ISO message: {iso_message}")
+                    response = transactions.handle_iso_transaction(iso_message)
+                    response_iso_message = f"ISO RESPONSE: {response['status']}"
+                    conn.sendall(response_iso_message.encode('utf-8'))
                 except Exception as e:
-                    logger.error(f"Failed to parse ISO 8583 message: {e}")
+                    logger.error(f"Failed to parse or handle ISO message: {e}")
                     conn.sendall(b"Invalid message format")
-                    continue
-                
-                response = transactions.handle_iso_transaction(iso_message)
-                
-                # --- Placeholder for packing the response back into ISO 8583 ---
-                response_iso_message = f"ISO RESPONSE: {response['status']}"
-                conn.sendall(response_iso_message.encode('utf-8'))
-
-        except Exception as e:
-            logger.error(f"Error handling client connection: {e}")
-        finally:
+            
             conn.close()
             logger.info("TCP connection closed.")
-
-    def stop(self):
-        self.is_running = False
-        dummy_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        dummy_sock.connect((self.host, self.port))
-        dummy_sock.close()
-        self.server_socket.close()
-
-# --- Flask Web Server for Virtual Terminals ---
-class FlaskServer(threading.Thread):
-    def __init__(self, host, port):
-        super().__init__()
-        self.app = Flask(__name__)
-        # Correctly register the blueprint
-        self.app.register_blueprint(api_bp) 
-        self.srv = make_server(host, port, self.app)
-        self.ctx = self.app.app_context()
-        self.ctx.push()
-
-    def run(self):
-        logger.info(f"Flask Web Server started on http://{self.srv.host}:{self.srv.port}")
-        self.srv.serve_forever()
-
-    def stop(self):
-        self.srv.shutdown()
-
-# --- Main Application Logic ---
-def main():
-    logger.info("Starting payment processing backend...")
-    
-    tcp_server = TCPServer(Config.TCP_HOST, Config.TCP_PORT)
-    tcp_server.start()
-
-    flask_server = FlaskServer(Config.WEB_HOST, Config.WEB_PORT)
-    flask_server.start()
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt received, shutting down servers...")
-        flask_server.stop()
-        tcp_server.stop()
-        flask_server.join()
-        tcp_server.join()
-        logger.info("Servers shut down successfully.")
+        except Exception as e:
+            logger.error(f"TCP server error: {e}")
 
 if __name__ == "__main__":
-    main()
+    # In production, Gunicorn will manage the app.run() for you.
+    # We use this block for local development.
+    # Start the TCP server in a separate thread for local testing.
+    tcp_thread = threading.Thread(target=run_tcp_server)
+    tcp_thread.daemon = True
+    tcp_thread.start()
+    
+    app.run(host='0.0.0.0', port=5000, debug=True)

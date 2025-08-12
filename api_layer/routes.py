@@ -1,11 +1,18 @@
 from flask import Blueprint, request, jsonify
 from core_logic import transactions
-from database import database # Import the database module to get history
+from database import database
 import logging
 
 logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')
+
+@api_bp.route('/')
+def home():
+    """
+    Returns a simple message to confirm the API is running.
+    """
+    return jsonify({'message': 'Welcome to the payment processing API. The API is running correctly.'}), 200
 
 @api_bp.route('/payments/process', methods=['POST'])
 def process_payment():
@@ -16,7 +23,6 @@ def process_payment():
         request_data = request.get_json()
         logger.info(f"Received new payment request from API: {request_data}")
         
-        # Pass the request data to the core transaction logic
         result = transactions.handle_http_transaction(request_data)
 
         if result['status'] == 'approved' or result['status'] == 'success':

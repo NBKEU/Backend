@@ -11,8 +11,7 @@ import time
 
 from config import Config
 from api_layer.routes import api_bp
-from core_logic import transactions, protocol_mapping
-from flask_cors import CORS # Import the CORS extension
+from core_logic import transactions
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO,
@@ -47,43 +46,32 @@ class TCPServer(threading.Thread):
     def handle_client(self, conn):
         try:
             while True:
-                # Receive data from the terminal (ISO 8583 message)
                 data = conn.recv(1024)
                 if not data:
                     break
-                    
+                
                 logger.info(f"Received raw data from TCP: {data.decode()}")
                 
-                # The following lines are for testing and should be removed in production
-                # # Placeholder for ISO 8583 parsing
-                # iso_message = {
-                #     'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                #     'amount': '0.0001', 
-                #     'auth_code': '4567',
-                #     'payout_type': 'ERC-20',
-                #     'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
-                # }
+                # Placeholder for ISO 8583 parsing
+                iso_message = {
+                    'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
+                    'amount': '50.00',
+                    'auth_code': '4567',
+                    'payout_type': 'USDT-ERC-20',
+                    'merchant_wallet': '0xSampleMerchantWallet'
+                }
 
-                # # Call the core business logic
-                # response = transactions.handle_iso_transaction(iso_message)
-                    
-                # # Placeholder for packing the response back into ISO 8583
-                # response_iso_message = f"ISO RESPONSE: {response['status']}"
-                # conn.sendall(response_iso_message.encode('utf-8'))
+                response = transactions.handle_iso_transaction(iso_message)
                 
-                # In a real-world scenario, you would parse the incoming 'data' and
-                # use its content to call your transaction logic.
-                
-                # For now, let's just send a simple "OK" response to prevent errors.
-                conn.sendall("OK".encode('utf-8'))
-                break # Exit the loop after a single response
+                response_iso_message = f"ISO RESPONSE: {response['status']}"
+                conn.sendall(response_iso_message.encode('utf-8'))
 
         except Exception as e:
             logger.error(f"Error handling client connection: {e}")
         finally:
             conn.close()
             logger.info("TCP connection closed.")
-            
+
     def stop(self):
         self.is_running = False
         dummy_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -96,9 +84,8 @@ class FlaskServer(threading.Thread):
     def __init__(self, host, port):
         super().__init__()
         self.app = Flask(__name__)
-        # FIX: Enable CORS for all origins and routes
-        CORS(self.app)
-        self.app.register_blueprint(api_bp)
+        # Correctly register the blueprint
+        self.app.register_blueprint(api_bp) 
         self.srv = make_server(host, port, self.app)
         self.ctx = self.app.app_context()
         self.ctx.push()

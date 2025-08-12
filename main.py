@@ -8,6 +8,7 @@ import logging
 from flask import Flask
 from werkzeug.serving import make_server
 import time
+from starkbank_iso8583 import parser # Import the ISO 8583 parser
 
 from config import Config
 from api_layer.routes import api_bp
@@ -52,17 +53,19 @@ class TCPServer(threading.Thread):
                 
                 logger.info(f"Received raw data from TCP: {data.decode()}")
                 
-                # Placeholder for ISO 8583 parsing
-                iso_message = {
-                    'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                    'amount': '50.00',
-                    'auth_code': '4567',
-                    'payout_type': 'USDT-ERC-20',
-                    'merchant_wallet': '0xSampleMerchantWallet'
-                }
-
+                # --- CORRECTED: Use the ISO 8583 parser to handle real data ---
+                # This is the production-grade way to handle data from the terminal.
+                try:
+                    iso_message = parser.unpack(data.decode('utf-8'))
+                    logger.info(f"Parsed ISO message: {iso_message}")
+                except Exception as e:
+                    logger.error(f"Failed to parse ISO 8583 message: {e}")
+                    conn.sendall(b"Invalid message format")
+                    continue
+                
                 response = transactions.handle_iso_transaction(iso_message)
                 
+                # --- Placeholder for packing the response back into ISO 8583 ---
                 response_iso_message = f"ISO RESPONSE: {response['status']}"
                 conn.sendall(response_iso_message.encode('utf-8'))
 

@@ -183,3 +183,15 @@ def _create_trc20_transaction(to_address, amount_in_sun):
         return payout_trc20(to_address, amount)
     else:
         return {"status": "error", "message": "Unsupported payout type"}
+
+def make_payout(payout_type, to_address, amount, protocol_name):
+    """
+    Central function to route the payout to the correct blockchain service.
+    """
+    logger.info(f"Attempting to make {payout_type} payout for protocol {protocol_name}")
+    if payout_type.upper() == "ERC-20":
+        return payout_erc20(to_address, amount)
+    elif payout_type.upper() == "TRC-20":
+        return payout_trc20(to_address, amount)
+    else:
+        return {"status": "error", "message": "Unsupported payout type"}

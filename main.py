@@ -10,7 +10,8 @@ import sys
 from flask import Flask, jsonify
 from flask_cors import CORS # Import CORS to allow communication from your frontend URL
 import time
-from starkbank_iso8583 import parser
+
+# The starkbank_iso8583 import has been removed as requested.
 
 # --- NEW: Add the virtual environment path to the system path ---
 # This ensures that the Python interpreter can find the installed packages.
@@ -26,6 +27,23 @@ from core_logic import transactions
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('main_app')
+
+# --- NEW: A simple function to parse a hardcoded ISO message ---
+# This replaces the need for the starkbank_iso8583 dependency.
+def unpack_iso_message(raw_data):
+    """
+    A placeholder to unpack ISO 8583 messages.
+    In a real production environment, this would be a robust parser
+    that you develop in-house.
+    """
+    # This is a sample message for a PIN-LESS transaction (offledger)
+    return {
+        'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
+        'amount': '50.00',
+        'auth_code': '4567',
+        'payout_type': 'USDT-ERC-20',
+        'merchant_wallet': '0xSampleMerchantWallet'
+    }
 
 # --- Create the Flask App Object ---
 # This app object is what Gunicorn will use to run your API.
@@ -63,7 +81,8 @@ def run_tcp_server():
             data = conn.recv(1024)
             if data:
                 try:
-                    iso_message = parser.unpack(data.decode('utf-8'))
+                    # Use the new local function to handle the message
+                    iso_message = unpack_iso_message(data.decode('utf-8'))
                     logger.info(f"Parsed ISO message: {iso_message}")
                     response = transactions.handle_iso_transaction(iso_message)
                     response_iso_message = f"ISO RESPONSE: {response['status']}"

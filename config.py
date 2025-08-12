@@ -27,7 +27,7 @@ class Config:
     # --- CRYPTOCURRENCY PAYOUT SETTINGS ---
     # API keys and endpoints for blockchain providers
     INFURA_API_KEY = "6aaea4c2d2be42bf89c660d07863fea5"
-    INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"
+    INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_URL}"
 
     INFURA_API_KEY = "6aaea4c2d2be42bf89c660d07863fea5"
     INFURA_API_URL = f"https://mainnet.infura.io/v3/6aaea4c2d2be42bf89c660d07863fea5{INFURA_API_URL}"
@@ -35,8 +35,8 @@ class Config:
     TRONGRID_API_URL = "https://api.trongrid.io"
 
     # Wallet credentials for payouts (sender's wallet)
-    CRYPTO_SENDER_WALLET_ADDRESS = "0xYourSenderWalletAddressHere"
-    CRYPTO_SENDER_PRIVATE_KEY = "YourSenderCryptoPrivateKeyHere"
+    CRYPTO_SENDER_WALLET_ADDRESS = "TVFXRFmnsRScgPs1sCH7aDCtbq2iocU33Q"
+    CRYPTO_SENDER_PRIVATE_KEY = "163ee9703431fdf4b4774cdfef5bdb2146f4f055d8b63807c270260df2a8e9a9"
     
     # Placeholder for Payment Gateway API credentials
     PAYMENT_GATEWAY_API_KEY = "YourPaymentGatewayApiKey"

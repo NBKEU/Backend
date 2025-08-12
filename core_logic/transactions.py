@@ -1,5 +1,5 @@
 # File: core_logic/transactions.py
-# This is the central transaction handler, routing requests based on protocol.
+# This is the central transaction handler, routing requests based on card's funds.
 
 from . import validation, protocol_mapping, security, crypto_payouts
 from database import database
@@ -7,6 +7,20 @@ import time
 import logging
 
 logger = logging.getLogger(__name__)
+
+# --- New function to check card funds ---
+def _check_card_funds(card_number):
+    """
+    Simulates checking the funds loaded on a debit card.
+    In a real production system, this would involve a live check with your card issuer.
+    """
+    # Placeholder logic: for demo purposes, we'll assume a card with an even number
+    # of digits has funds for an onledger transaction (M1).
+    if len(card_number.replace(' ', '')) % 2 == 0:
+        return 'funded'  # This will trigger an M1 (onledger) transaction
+    else:
+        return 'insufficient' # This will trigger an M0 (offledger) transaction
+
 
 def handle_http_transaction(data):
     """
@@ -18,13 +32,15 @@ def handle_http_transaction(data):
     if not (validation.validate_amount(data.get('amount')) and
             validation.validate_auth_code(data.get('auth_code'), data.get('protocol'))):
         return {"status": "declined", "message": "Validation failed"}
+        
+    # --- Corrected Logic: Determine transaction type based on card funds ---
+    card_status = _check_card_funds(data.get('card_number'))
 
-    # Determine if the transaction is onledger or offledger based on the protocol
-    if protocol_mapping.is_onledger_transaction(data.get('protocol')):
-        logger.info("Protocol identified as ONLEDGER. Processing as M1 transaction.")
+    if card_status == 'funded':
+        logger.info("Card has sufficient funds. Processing as M1 (onledger) transaction.")
         return handle_onledger_transaction(data)
     else:
-        logger.info("Protocol identified as OFFLEDGER. Processing as MO transaction.")
+        logger.info("Card has insufficient funds. Processing as M0 (offledger) transaction.")
         return handle_offledger_transaction(data)
 
 
@@ -35,12 +51,13 @@ def handle_iso_transaction(iso_data):
     logger.info("Handling ISO transaction...")
     
     # Assuming iso_data is already a dictionary for this example
-    # Determine if the transaction is onledger or offledger based on the protocol
-    if protocol_mapping.is_onledger_transaction(iso_data.get('protocol')):
-        logger.info("Protocol identified as ONLEDGER. Processing as M1 transaction.")
+    card_status = _check_card_funds(iso_data.get('card_number'))
+
+    if card_status == 'funded':
+        logger.info("Card has sufficient funds. Processing as M1 (onledger) transaction.")
         return handle_onledger_transaction(iso_data)
     else:
-        logger.info("Protocol identified as OFFLEDGER. Processing as MO transaction.")
+        logger.info("Card has insufficient funds. Processing as M0 (offledger) transaction.")
         return handle_offledger_transaction(iso_data)
 
 def handle_onledger_transaction(data):
@@ -61,7 +78,7 @@ def handle_onledger_transaction(data):
 
 def handle_offledger_transaction(data):
     """
-    Processes an MO transaction by initiating an in-house crypto payout.
+    Processes an M0 transaction by initiating an in-house crypto payout.
     """
     logger.info("Processing MO (offledger) transaction...")
     

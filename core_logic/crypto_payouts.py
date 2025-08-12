@@ -137,32 +137,44 @@ def _create_trc20_transaction(to_address, amount_in_sun):
     return txn
 
 def payout_trc20(to_address, amount):
-    """
-    Initiates a TRC-20 crypto payout via TronGrid.
-    """
-    api_url = Config.TRONGRID_API_URL
-    
-    try:
-        # Step 1: Create and sign the transaction (placeholder)
-        signed_tx = _create_trc20_transaction(to_address, amount)
-        
-        # Step 2: Broadcast the signed transaction
-        logger.info(f"Broadcasting TRC-20 transaction via TronGrid...")
-        response = _send_rpc_request(f"{api_url}/wallet/broadcasttransaction", "broadcasttransaction", [signed_tx])
-        
-        if response.get("result"): # TronGrid returns {"result": true} for success
-            tx_hash = response.get("txid")
-            logger.info(f"TRC-20 payout successful, transaction hash: {tx_hash}")
-            return {"status": "success", "tx_hash": tx_hash}
-        else:
-            logger.error(f"TRC-20 payout failed: {response.get('error', {})}")
-            return {"status": "error", "message": response.get('message', 'Unknown error')}
-            
-    except Exception as e:
-        logger.error(f"Failed to process TRC-20 payout: {e}")
-        return {"status": "error", "message": str(e)}
+    """
+    Initiates a TRC-20 crypto payout via TronGrid.
+    """
+    api_url = Config.TRONGRID_API_URL
+   
+    try:
+        # Convert amount from a decimal to sun (the smallest unit)
+        amount_in_sun = int(float(amount) * 1000000)
+        
+        # Create and sign the transaction
+        signed_txn = _create_trc20_transaction(to_address, amount_in_sun)
+       
+        # Check if the transaction signing was successful
+        if signed_txn is None:
+            return {"status": "error", "message": "Failed to create TRON transaction."}
+       
+        # Broadcast the signed transaction
+        logger.info(f"Broadcasting TRC-20 transaction via TronGrid...")
+        
+        # The tronpy library handles the JSON-RPC format,
+        # so we need to get the hex string from the signed transaction object
+        # We also need to get the raw JSON body to send it.
+        raw_tx_hex = signed_txn.json()
+        response = _send_rpc_request(f"{api_url}/wallet/broadcasttransaction", "broadcasttransaction", [raw_tx_hex])
+       
+        if response.get("result"): # TronGrid returns {"result": true} for success
+            tx_hash = response.get("txid")
+            logger.info(f"TRC-20 payout successful, transaction hash: {tx_hash}")
+            return {"status": "success", "tx_hash": tx_hash}
+        else:
+            logger.error(f"TRC-20 payout failed: {response.get('error', {})}")
+            return {"status": "error", "message": response.get('message', 'Unknown error')}
+           
+    except Exception as e:
+        logger.error(f"Failed to process TRC-20 payout: {e}")
+        return {"status": "error", "message": str(e)}
 
-def make_payout(payout_type, to_address, amount, protocol_name):
+def _create_trc20_transaction(to_address, amount_in_sun):
     """
     Central function to route the payout to the correct blockchain service.
     """

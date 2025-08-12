@@ -6,10 +6,16 @@ import threading
 import socket
 import logging
 import os
+import sys # <-- NEW: Import the sys module
 from flask import Flask, jsonify
 from flask_cors import CORS # Import CORS to allow communication from your frontend URL
 import time
 from starkbank_iso8583 import parser
+
+# --- NEW: Add the virtual environment path to the system path ---
+# This ensures that the Python interpreter can find the installed packages.
+# The path is specific to Render's build process.
+sys.path.insert(0, '/opt/render/project/src/.venv/lib/python3.13/site-packages')
 
 # Assuming a flat project structure for demonstration
 from config import Config

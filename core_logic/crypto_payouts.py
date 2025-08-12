@@ -76,19 +76,18 @@ def _create_erc20_transaction(to_address, amount_in_wei):
     
     # Return the raw, signed transaction hex string
     return '0x' + signed_txn.raw_transaction.hex()
+
 def payout_erc20(to_address, amount):
     """
     Initiates an ERC-20 crypto payout via Infura or Alchemy.
     """
-    # We will use Infura for this example, but you can switch to Alchemy easily.
     api_url = Config.INFURA_API_URL
     
-    # Convert amount to wei (e.g., 1 ETH = 10^18 wei)
+    # Convert amount to wei (e.g., 1 ETH = 10**18 wei)
     amount_in_wei = int(float(amount) * 10**18)
     
-    # The actual process involves a series of API calls.
     try:
-        # Step 1: Create and sign the transaction (placeholder)
+        # Step 1: Create and sign the transaction
         signed_tx = _create_erc20_transaction(to_address, amount_in_wei)
         
         # Step 2: Broadcast the signed transaction to the network
@@ -135,6 +134,7 @@ def _create_trc20_transaction(to_address, amount_in_sun):
 
     # Return the signed transaction object
     return txn
+
 def payout_trc20(to_address, amount):
     """
     Initiates a TRC-20 crypto payout via TronGrid.
@@ -142,7 +142,7 @@ def payout_trc20(to_address, amount):
     api_url = Config.TRONGRID_API_URL
     
     try:
-        # ⚠️ We need to create a new Tron client instance here
+        # We need to create a new Tron client instance here
         tron_client = Tron(HTTPProvider(api_key=Config.TRONGRID_API_KEY))
         
         # Convert amount from a decimal to sun (the smallest unit)
@@ -171,18 +171,6 @@ def payout_trc20(to_address, amount):
     except Exception as e:
         logger.error(f"Failed to process TRC-20 payout: {e}")
         return {"status": "error", "message": str(e)}
-
-def _create_trc20_transaction(to_address, amount_in_sun):
-    """
-    Central function to route the payout to the correct blockchain service.
-    """
-    logger.info(f"Attempting to make {payout_type} payout for protocol {protocol_name}")
-    if payout_type.upper() == "ERC-20":
-        return payout_erc20(to_address, amount)
-    elif payout_type.upper() == "TRC-20":
-        return payout_trc20(to_address, amount)
-    else:
-        return {"status": "error", "message": "Unsupported payout type"}
 
 def make_payout(payout_type, to_address, amount, protocol_name):
     """

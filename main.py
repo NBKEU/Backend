@@ -8,16 +8,19 @@ import logging
 import os
 import sys
 from flask import Flask, jsonify
-from flask_cors import CORS
+from flask_cors import CORS # Import CORS to allow communication from your frontend URL
 import time
 from starkbank_iso8583 import parser
 
-# To fix the ModuleNotFoundError on Render
+# --- NEW: Add the virtual environment path to the system path ---
+# This ensures that the Python interpreter can find the installed packages.
+# The path is specific to Render's build process.
 sys.path.insert(0, '/opt/render/project/src/.venv/lib/python3.13/site-packages')
 
-from api_layer.routes import api_bp
-from core_logic import transactions, protocol_mapping
+# Assuming a flat project structure for demonstration
 from config import Config
+from api_layer.routes import api_bp
+from core_logic import transactions
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO,
@@ -25,15 +28,23 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger('main_app')
 
 # --- Create the Flask App Object ---
+# This app object is what Gunicorn will use to run your API.
 app = Flask(__name__)
+# Enable CORS for all routes on the blueprint to allow your frontend to connect
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.register_blueprint(api_bp)
 
+# A simple root route to confirm the API is running
 @app.route('/')
 def home():
+    """
+    Returns a simple message to confirm the API is running.
+    """
     return jsonify({'message': 'Payment processing API is running correctly.'}), 200
 
 # --- TCP Listener for Android Terminals ---
+# In a real production environment, this should be run as a separate Render service
+# because Gunicorn is a single-threaded web server that cannot manage other services.
 def run_tcp_server():
     host = os.environ.get('TCP_HOST', '0.0.0.0')
     port = int(os.environ.get('TCP_PORT', 9000))
@@ -47,6 +58,8 @@ def run_tcp_server():
         try:
             conn, addr = server_socket.accept()
             logger.info(f"Accepted TCP connection from {addr}")
+            
+            # --- Corrected Logic for handling the ISO message ---
             data = conn.recv(1024)
             if data:
                 try:
@@ -58,13 +71,19 @@ def run_tcp_server():
                 except Exception as e:
                     logger.error(f"Failed to parse or handle ISO message: {e}")
                     conn.sendall(b"Invalid message format")
+            
             conn.close()
             logger.info("TCP connection closed.")
         except Exception as e:
             logger.error(f"TCP server error: {e}")
 
 if __name__ == "__main__":
+    # In production, Gunicorn will manage the app.run() for you.
+    # We use this block for local development.
+    # Start the TCP server in a separate thread for local testing.
     tcp_thread = threading.Thread(target=run_tcp_server)
     tcp_thread.daemon = True
     tcp_thread.start()
+    
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000), debug=True)
+

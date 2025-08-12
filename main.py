@@ -58,7 +58,7 @@ class TCPServer(threading.Thread):
                     'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
                     'amount': '50.00',
                     'auth_code': '4567',
-                    'payout_type': 'USDT-ERC-20',
+                    'payout_type': 'ERC-20', # FIX: Corrected to just ERC-20
                     'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
                 }
 

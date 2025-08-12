@@ -8,7 +8,7 @@ import time
 transactions_db = []
 logger = logging.getLogger(__name__)
 
-def save_transaction(protocol, amount, auth_code, ledger_type, status, tx_hash=None):
+def save_transaction(protocol, amount, auth_code, transaction_type, status, tx_hash=None):
     """
     Simulates saving a transaction record to the database.
     """
@@ -16,7 +16,7 @@ def save_transaction(protocol, amount, auth_code, ledger_type, status, tx_hash=N
         "protocol": protocol,
         "amount": amount,
         "auth_code": auth_code,
-        "ledger_type": ledger_type,
+        "transaction_type": transaction_type,
         "status": status,
         "timestamp": time.time(),
         "tx_hash": tx_hash
@@ -24,3 +24,6 @@ def save_transaction(protocol, amount, auth_code, ledger_type, status, tx_hash=N
     transactions_db.append(transaction)
     logger.info(f"Transaction saved to DB: {transaction}")
     return True
+
+def get_transaction_history():
+    return transactions_db

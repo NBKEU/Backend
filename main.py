@@ -60,7 +60,7 @@ class TCPServer(threading.Thread):
                     'amount': '50.00',
                     'auth_code': '4567',
                     'payout_type': 'ERC-20', # Example of an added field for crypto
-                    'merchant_wallet': '0xSampleMerchantWallet'
+                    'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
                 }
 
                 # Call the core business logic

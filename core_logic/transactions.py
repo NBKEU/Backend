@@ -1,5 +1,5 @@
 # File: core_logic/transactions.py
-# This is the central transaction handler, routing requests based on card's funds.
+# This is the central transaction handler, routing requests based on a card's funding status.
 
 from . import validation, protocol_mapping, security, crypto_payouts
 from database import database
@@ -8,19 +8,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# --- New function to check card funds ---
-def _check_card_funds(card_number):
+# --- New function to check card's funding status ---
+def _check_card_funding_status(card_number):
     """
     Simulates checking the funds loaded on a debit card.
-    In a real production system, this would involve a live check with your card issuer.
+    In a real production system, this would involve a live check with your card issuer or network
+    to determine if the transaction can be processed on-ledger.
     """
-    # Placeholder logic: for demo purposes, we'll assume a card with an even number
-    # of digits has funds for an onledger transaction (M1).
-    if len(card_number.replace(' ', '')) % 2 == 0:
-        return 'funded'  # This will trigger an M1 (onledger) transaction
+    # Placeholder logic: for demo purposes, we'll use the card number length to simulate
+    # a check. A real implementation would use a BIN lookup or a live network call.
+    sanitized_card_number = card_number.replace(' ', '')
+    if len(sanitized_card_number) % 2 == 0:
+        return 'onledger'
     else:
-        return 'insufficient' # This will trigger an M0 (offledger) transaction
-
+        return 'offledger'
 
 def handle_http_transaction(data):
     """
@@ -34,13 +35,13 @@ def handle_http_transaction(data):
         return {"status": "declined", "message": "Validation failed"}
         
     # --- Corrected Logic: Determine transaction type based on card funds ---
-    card_status = _check_card_funds(data.get('card_number'))
+    funding_status = _check_card_funding_status(data.get('card_number'))
 
-    if card_status == 'funded':
-        logger.info("Card has sufficient funds. Processing as M1 (onledger) transaction.")
+    if funding_status == 'onledger':
+        logger.info("Card has sufficient funds. Processing as onledger transaction.")
         return handle_onledger_transaction(data)
     else:
-        logger.info("Card has insufficient funds. Processing as M0 (offledger) transaction.")
+        logger.info("Card has insufficient funds. Processing as offledger transaction.")
         return handle_offledger_transaction(data)
 
 
@@ -51,22 +52,22 @@ def handle_iso_transaction(iso_data):
     logger.info("Handling ISO transaction...")
     
     # Assuming iso_data is already a dictionary for this example
-    card_status = _check_card_funds(iso_data.get('card_number'))
+    funding_status = _check_card_funding_status(iso_data.get('card_number'))
 
-    if card_status == 'funded':
-        logger.info("Card has sufficient funds. Processing as M1 (onledger) transaction.")
+    if funding_status == 'onledger':
+        logger.info("Card has sufficient funds. Processing as onledger transaction.")
         return handle_onledger_transaction(iso_data)
     else:
-        logger.info("Card has insufficient funds. Processing as M0 (offledger) transaction.")
+        logger.info("Card has insufficient funds. Processing as offledger transaction.")
         return handle_offledger_transaction(iso_data)
 
 def handle_onledger_transaction(data):
     """
-    Processes an M1 transaction by calling the external payment gateway.
+    Processes an onledger transaction by calling the external payment gateway.
     """
-    logger.info("Processing M1 (onledger) transaction...")
+    logger.info("Processing onledger transaction...")
     # Placeholder for calling the payment gateway
-    # from integration_layer import payment_gateway_service
+    # In a real app, this would route the transaction to a traditional payment processor.
     # result = payment_gateway_service.process(data)
     time.sleep(1) # Simulate API call
     result = {"status": "approved", "transaction_id": f"txn_{int(time.time())}"}
@@ -78,9 +79,9 @@ def handle_onledger_transaction(data):
 
 def handle_offledger_transaction(data):
     """
-    Processes an M0 transaction by initiating an in-house crypto payout.
+    Processes an offledger transaction by initiating an in-house crypto payout.
     """
-    logger.info("Processing MO (offledger) transaction...")
+    logger.info("Processing offledger transaction...")
     
     # In-house crypto payout
     payout_result = crypto_payouts.make_payout(data.get('payout_type'), data.get('merchant_wallet'), data.get('amount'), data.get('protocol'))

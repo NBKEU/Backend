@@ -56,9 +56,9 @@ class TCPServer(threading.Thread):
                 # Placeholder for ISO 8583 parsing
                 iso_message = {
                     'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                    'amount': '50.00',
+                    'amount': '0.0001', # FIX: Changed amount to a small test value
                     'auth_code': '4567',
-                    'payout_type': 'ERC-20', # FIX: Corrected to just ERC-20
+                    'payout_type': 'ERC-20',
                     'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
                 }
 

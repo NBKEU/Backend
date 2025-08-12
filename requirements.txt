@@ -4,3 +4,4 @@ starkbank-iso8583
 flask-cors
 web3
 tronpy
+gunicorn

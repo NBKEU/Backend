@@ -1,7 +1,9 @@
 # File: core_logic/crypto_payouts.py
 # This module handles the secure API calls for cryptocurrency payouts using
 # Infura/Alchemy for ERC-20 and TronGrid for TRC-20.
-
+import os
+from web3 import Web3
+from eth_account import Account
 import requests
 import json
 import logging
@@ -32,21 +34,45 @@ def _send_rpc_request(url, method, params):
 # --- ERC-20 Payouts (Infura/Alchemy) ---
 def _create_erc20_transaction(to_address, amount_in_wei):
     """
-    Builds and signs an Ethereum transaction for an ERC-20 token.
-    This is a conceptual placeholder for a complex process.
+    Builds and signs a real Ethereum transaction.
     """
-    # In a real implementation, you would:
-    # 1. Use a library like `web3.py` to connect to Infura/Alchemy.
-    # 2. Get the current nonce and gas price.
-    # 3. Build the raw transaction.
-    # 4. Sign the transaction with your private key.
-    # This is a critical security-sensitive area.
-    logger.info(f"Creating ERC-20 transaction to {to_address} for {amount_in_wei} wei")
-    
-    # Placeholder response for a signed transaction
-    signed_tx = "0xSignedTransactionHex"
-    return signed_tx
+    # ⚠️ SECURITY: Your private key must be stored securely, e.g., in an environment variable
+    sender_private_key = os.getenv("SENDER_PRIVATE_KEY")
+    if not sender_private_key:
+        logger.error("Sender private key not found in environment variables.")
+        return None
 
+    # Connect to the Infura node
+    w3 = Web3(Web3.HTTPProvider(Config.INFURA_API_URL))
+    if not w3.is_connected():
+        logger.error("Failed to connect to Infura.")
+        return None
+
+    # Get the sender's address from the private key
+    sender_account = Account.from_key(sender_private_key)
+    from_address = sender_account.address
+
+    logger.info(f"Creating ERC-20 transaction from {from_address} to {to_address}...")
+
+    # Get the next available transaction count (nonce)
+    nonce = w3.eth.get_transaction_count(from_address)
+
+    # Build the transaction
+    transaction = {
+        'chainId': w3.eth.chain_id,
+        'from': from_address,
+        'to': to_address,
+        'value': amount_in_wei,
+        'gas': 21000,  # Gas limit for a standard ETH transfer
+        'gasPrice': w3.eth.gas_price,
+        'nonce': nonce
+    }
+
+    # Sign the transaction with your private key
+    signed_txn = w3.eth.account.sign_transaction(transaction, sender_private_key)
+    
+    # Return the raw, signed transaction hex string
+    return signed_txn.rawTransaction.hex()
 def payout_erc20(to_address, amount):
     """
     Initiates an ERC-20 crypto payout via Infura or Alchemy.

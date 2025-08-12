@@ -37,7 +37,7 @@ def _create_erc20_transaction(to_address, amount_in_wei):
     Builds and signs a real Ethereum transaction.
     """
     # ⚠️ SECURITY: Your private key must be stored securely, e.g., in an environment variable
-    sender_private_key = os.getenv("SENDER_PRIVATE_KEY")
+    sender_private_key = os.getenv("ETH_PRIVATE_KEY")
     if not sender_private_key:
         logger.error("Sender private key not found in environment variables.")
         return None

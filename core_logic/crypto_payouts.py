@@ -4,6 +4,9 @@
 import os
 from web3 import Web3
 from eth_account import Account
+from tronpy import Tron
+from tronpy.keys import PrivateKey
+from tronpy.providers import HTTPProvider
 import requests
 import json
 import logging
@@ -105,17 +108,33 @@ def payout_erc20(to_address, amount):
         return {"status": "error", "message": str(e)}
 
 # --- TRC-20 Payouts (TronGrid) ---
-def _create_trc20_transaction(to_address, amount):
+def _create_trc20_transaction(to_address, amount_in_sun):
     """
-    Builds and signs a TRON transaction for a TRC-20 token.
-    This is a conceptual placeholder for a complex process.
+    Builds and signs a real TRON transaction.
     """
-    # In a real implementation, you would use a Tron library.
-    logger.info(f"Creating TRC-20 transaction to {to_address} for {amount}")
+    # ⚠️ SECURITY: Your private key must be stored securely
+    sender_private_key_hex = os.getenv("TRON_PRIVATE_KEY")
+    if not sender_private_key_hex:
+        logger.error("TRON private key not found in environment variables.")
+        return None
+
+    # Use your TronGrid API URL
+    tron_client = Tron(HTTPProvider(api_key=Config.TRONGRID_API_KEY))
     
-    # Placeholder response for a signed transaction
-    signed_tx = "TRON_SignedTransactionHex"
-    return signed_tx
+    sender_private_key = PrivateKey(bytes.fromhex(sender_private_key_hex))
+    from_address = sender_private_key.public_key.to_base58check_address()
+
+    logger.info(f"Creating TRC-20 transaction from {from_address} to {to_address}...")
+
+    # Build the transaction object
+    txn = (
+        tron_client.trx.transfer(from_address, to_address, amount_in_sun)
+        .build()
+        .sign(sender_private_key)
+    )
+
+    # Return the signed transaction object
+    return txn
 
 def payout_trc20(to_address, amount):
     """

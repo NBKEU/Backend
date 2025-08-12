@@ -43,32 +43,32 @@ class TCPServer(threading.Thread):
                     logger.error(f"TCP accept error: {e}")
                 break
 
-    def handle_client(self, conn):
-        try:
-            while True:
-                # Receive data from the terminal (ISO 8583 message)
-                data = conn.recv(1024)
-                if not data:
-                    break
-                
-                logger.info(f"Received raw data from TCP: {data.decode()}")
-                
-                # Placeholder for ISO 8583 parsing
-                # In a real app, this would call your protocol_handler to unpack the message
-                iso_message = {
-                    'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                    'amount': '50.00',
-                    'auth_code': '4567',
-                    'payout_type': 'ERC-20', # Example of an added field for crypto
-                    'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
-                }
+def handle_client(self, conn):
+    try:
+        while True:
+            # Receive data from the terminal (ISO 8583 message)
+            data = conn.recv(1024)
+            if not data:
+                break
+            
+            logger.info(f"Received raw data from TCP: {data.decode()}")
+            
+            # Placeholder for ISO 8583 parsing
+            # FIX: Updated payout_type and merchant_wallet to match the frontend
+            iso_message = {
+                'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
+                'amount': '50.00',
+                'auth_code': '4567',
+                'payout_type': 'USDT-ERC-20', # Correct format for off-ledger
+                'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
+            }
 
-                # Call the core business logic
-                response = transactions.handle_iso_transaction(iso_message)
-                
-                # Placeholder for packing the response back into ISO 8583
-                response_iso_message = f"ISO RESPONSE: {response['status']}"
-                conn.sendall(response_iso_message.encode('utf-8'))
+            # Call the core business logic
+            response = transactions.handle_iso_transaction(iso_message)
+            
+            # Placeholder for packing the response back into ISO 8583
+            response_iso_message = f"ISO RESPONSE: {response['status']}"
+            conn.sendall(response_iso_message.encode('utf-8'))
 
         except Exception as e:
             logger.error(f"Error handling client connection: {e}")

@@ -43,38 +43,38 @@ class TCPServer(threading.Thread):
                     logger.error(f"TCP accept error: {e}")
                 break
 
-def handle_client(self, conn):
-    try:
-        while True:
-            # Receive data from the terminal (ISO 8583 message)
-            data = conn.recv(1024)
-            if not data:
-                break
+    def handle_client(self, conn):
+        try:
+            while True:
+                # Receive data from the terminal (ISO 8583 message)
+                data = conn.recv(1024)
+                if not data:
+                    break
+                    
+                logger.info(f"Received raw data from TCP: {data.decode()}")
                 
-            logger.info(f"Received raw data from TCP: {data.decode()}")
+                # Placeholder for ISO 8583 parsing
+                iso_message = {
+                    'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
+                    'amount': '50.00',
+                    'auth_code': '4567',
+                    'payout_type': 'USDT-ERC-20',
+                    'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
+                }
+
+                # Call the core business logic
+                response = transactions.handle_iso_transaction(iso_message)
+                    
+                # Placeholder for packing the response back into ISO 8583
+                response_iso_message = f"ISO RESPONSE: {response['status']}"
+                conn.sendall(response_iso_message.encode('utf-8'))
+
+        except Exception as e:
+            logger.error(f"Error handling client connection: {e}")
+        finally:
+            conn.close()
+            logger.info("TCP connection closed.")
             
-            # Placeholder for ISO 8583 parsing
-            iso_message = {
-                'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                'amount': '50.00',
-                'auth_code': '4567',
-                'payout_type': 'USDT-ERC-20',
-                'merchant_wallet': '0x73F888dcE062d2acD4A7688386F0f92f43055491'
-            }
-
-            # Call the core business logic
-            response = transactions.handle_iso_transaction(iso_message)
-                
-            # Placeholder for packing the response back into ISO 8583
-            response_iso_message = f"ISO RESPONSE: {response['status']}"
-            conn.sendall(response_iso_message.encode('utf-8'))
-
-    except Exception as e:
-        logger.error(f"Error handling client connection: {e}")
-    finally:
-        conn.close()
-        logger.info("TCP connection closed.")
-      
     def stop(self):
         self.is_running = False
         dummy_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

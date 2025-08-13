@@ -32,6 +32,11 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.register_blueprint(api_bp)
 
+# --- CORRECTED: Call the database setup function here. ---
+# This ensures the table is created before Gunicorn starts the worker processes.
+with app.app_context():
+    database.setup_database()
+
 # A simple root route to confirm the API is running
 @app.route('/')
 def home():
@@ -82,9 +87,6 @@ def run_tcp_server():
             logger.error(f"TCP server error: {e}")
 
 if __name__ == "__main__":
-    # Call the database setup function before starting the server.
-    database.setup_database()
-    
     # In production, Gunicorn will manage the app.run() for you.
     # We use this block for local development.
     # Start the TCP server in a separate thread for local testing.

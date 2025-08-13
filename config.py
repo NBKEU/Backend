@@ -22,17 +22,14 @@ class Config:
     }
 
     # --- CRYPTOCURRENCY PAYOUT SETTINGS ---
-    # API keys and endpoints for blockchain providers
     INFURA_API_KEY = os.environ.get('INFURA_API_KEY', "YOUR_INFURA_API_KEY")
     INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"
     TRONGRID_API_KEY = os.environ.get('TRONGRID_API_KEY', "YOUR_TRONGRID_API_KEY")
     TRONGRID_API_URL = "https://api.trongrid.io"
 
-    # Wallet credentials for payouts (sender's wallet)
     CRYPTO_SENDER_WALLET_ADDRESS = os.environ.get('CRYPTO_SENDER_WALLET_ADDRESS', "0xYourSenderWalletAddressHere")
     CRYPTO_SENDER_PRIVATE_KEY = os.environ.get('CRYPTO_SENDER_PRIVATE_KEY', "YourSenderCryptoPrivateKeyHere")
 
-    # --- TOKEN CONTRACTS ---
     ERC20_TOKEN_CONTRACT_ADDRESS = os.environ.get('ERC20_TOKEN_CONTRACT_ADDRESS', "0xdAC17F958D2ee523a2206206994597C13D831ec7")
     TRC20_TOKEN_CONTRACT_ADDRESS = os.environ.get('TRC20_TOKEN_CONTRACT_ADDRESS', "TR7NHqjeFpX9yB1Jg1a5X6eR5yvUfR7T")
 

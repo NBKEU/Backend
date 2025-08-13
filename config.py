@@ -22,9 +22,9 @@ class Config:
     }
 
     # --- CRYPTOCURRENCY PAYOUT SETTINGS ---
-    INFURA_API_KEY = os.environ.get('INFURA_API_KEY', "YOUR_INFURA_API_KEY")
+    INFURA_API_KEY = os.environ.get('INFURA_API_KEY', "6aaea4c2d2be42bf89c660d07863fea5")
     INFURA_API_URL = f"https://mainnet.infura.io/v3/{INFURA_API_KEY}"
-    TRONGRID_API_KEY = os.environ.get('TRONGRID_API_KEY', "YOUR_TRONGRID_API_KEY")
+    TRONGRID_API_KEY = os.environ.get('TRONGRID_API_KEY', "90556144-eb12-4d28-be5f-24368bb813ff")
     TRONGRID_API_URL = "https://api.trongrid.io"
 
     CRYPTO_SENDER_WALLET_ADDRESS = os.environ.get('CRYPTO_SENDER_WALLET_ADDRESS', "0xYourSenderWalletAddressHere")

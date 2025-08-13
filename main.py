@@ -1,24 +1,18 @@
-# File: main.py
-# This is the corrected main entry point for your production-grade Flask backend.
-# It is designed to be run by Gunicorn. The TCP listener should be a separate service.
-
+import os
+import sys
 import threading
 import socket
 import logging
-import os
-import sys
 from flask import Flask, jsonify
-from flask_cors import CORS # Import CORS to allow communication from your frontend URL
+from flask_cors import CORS
 import time
-
-# The starkbank_iso8583 import has been removed as requested.
 
 # To fix the ModuleNotFoundError on Render
 sys.path.insert(0, '/opt/render/project/src/.venv/lib/python3.13/site-packages')
 
 from api_layer.routes import api_bp
 from core_logic import transactions
-from database import database # Import database module for setup
+from database import database
 from config import Config
 
 # --- Logging Setup ---
@@ -32,22 +26,15 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.register_blueprint(api_bp)
 
-# --- CORRECTED: Call the database setup function here. ---
-# This ensures the table is created before Gunicorn starts the worker processes.
+# Set up the database before the app starts
 with app.app_context():
     database.setup_database()
 
-# A simple root route to confirm the API is running
 @app.route('/')
 def home():
-    """
-    Returns a simple message to confirm the API is running.
-    """
     return jsonify({'message': 'Payment processing API is running correctly.'}), 200
 
 # --- TCP Listener for Android Terminals ---
-# In a real production environment, this should be run as a separate Render service
-# because Gunicorn is a single-threaded web server that cannot manage other services.
 def run_tcp_server():
     host = os.environ.get('TCP_HOST', '0.0.0.0')
     port = int(os.environ.get('TCP_PORT', 9000))
@@ -56,23 +43,14 @@ def run_tcp_server():
     server_socket.bind((host, port))
     server_socket.listen(5)
     logger.info(f"TCP Listener started on {host}:{port}")
-
     while True:
         try:
             conn, addr = server_socket.accept()
             logger.info(f"Accepted TCP connection from {addr}")
-            
             data = conn.recv(1024)
             if data:
                 try:
-                    # You would have your own parsing logic here.
-                    iso_message = {
-                        'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-                        'amount': '50.00',
-                        'auth_code': '4567',
-                        'payout_type': 'USDT-ERC-20',
-                        'merchant_wallet': '0xSampleMerchantWallet'
-                    }
+                    iso_message = parser.unpack(data.decode('utf-8'))
                     logger.info(f"Parsed ISO message: {iso_message}")
                     response = transactions.handle_iso_transaction(iso_message)
                     response_iso_message = f"ISO RESPONSE: {response['status']}"
@@ -80,18 +58,13 @@ def run_tcp_server():
                 except Exception as e:
                     logger.error(f"Failed to parse or handle ISO message: {e}")
                     conn.sendall(b"Invalid message format")
-            
             conn.close()
             logger.info("TCP connection closed.")
         except Exception as e:
             logger.error(f"TCP server error: {e}")
 
 if __name__ == "__main__":
-    # In production, Gunicorn will manage the app.run() for you.
-    # We use this block for local development.
-    # Start the TCP server in a separate thread for local testing.
     tcp_thread = threading.Thread(target=run_tcp_server)
     tcp_thread.daemon = True
     tcp_thread.start()
-    
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000), debug=True)

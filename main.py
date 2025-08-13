@@ -13,35 +13,20 @@ import time
 
 # The starkbank_iso8583 import has been removed as requested.
 
-# Assuming a flat project structure for demonstration
-from config import Config
+# To fix the ModuleNotFoundError on Render
+sys.path.insert(0, '/opt/render/project/src/.venv/lib/python3.13/site-packages')
+
 from api_layer.routes import api_bp
 from core_logic import transactions
+from database import database # Import database module for setup
+from config import Config
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('main_app')
 
-# --- NEW: A simple function to parse a hardcoded ISO message ---
-# This replaces the need for the starkbank_iso8583 dependency.
-def unpack_iso_message(raw_data):
-    """
-    A placeholder to unpack ISO 8583 messages.
-    In a real production environment, this would be a robust parser
-    that you develop in-house.
-    """
-    # This is a sample message for a PIN-LESS transaction (offledger)
-    return {
-        'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
-        'amount': '50.00',
-        'auth_code': '4567',
-        'payout_type': 'USDT-ERC-20',
-        'merchant_wallet': '0xSampleMerchantWallet'
-    }
-
 # --- Create the Flask App Object ---
-# This app object is what Gunicorn will use to run your API.
 app = Flask(__name__)
 # Enable CORS for all routes on the blueprint to allow your frontend to connect
 CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -72,12 +57,17 @@ def run_tcp_server():
             conn, addr = server_socket.accept()
             logger.info(f"Accepted TCP connection from {addr}")
             
-            # --- Corrected Logic for handling the ISO message ---
             data = conn.recv(1024)
             if data:
                 try:
-                    # Use the new local function to handle the message
-                    iso_message = unpack_iso_message(data.decode('utf-8'))
+                    # You would have your own parsing logic here.
+                    iso_message = {
+                        'protocol': 'POS Terminal -101.8 (PIN-LESS transaction)',
+                        'amount': '50.00',
+                        'auth_code': '4567',
+                        'payout_type': 'USDT-ERC-20',
+                        'merchant_wallet': '0xSampleMerchantWallet'
+                    }
                     logger.info(f"Parsed ISO message: {iso_message}")
                     response = transactions.handle_iso_transaction(iso_message)
                     response_iso_message = f"ISO RESPONSE: {response['status']}"
@@ -92,6 +82,9 @@ def run_tcp_server():
             logger.error(f"TCP server error: {e}")
 
 if __name__ == "__main__":
+    # Call the database setup function before starting the server.
+    database.setup_database()
+    
     # In production, Gunicorn will manage the app.run() for you.
     # We use this block for local development.
     # Start the TCP server in a separate thread for local testing.

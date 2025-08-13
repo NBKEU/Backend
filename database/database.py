@@ -1,6 +1,3 @@
-# File: database/database.py
-# This is a production-ready database interaction layer using PostgreSQL.
-
 import os
 import logging
 import psycopg2
@@ -8,8 +5,6 @@ from psycopg2 import Error
 
 logger = logging.getLogger(__name__)
 
-# --- Database Connection and Credential Management ---
-# Credentials should be set as environment variables on Render.
 DB_NAME = os.environ.get('DB_NAME', 'your_db_name')
 DB_USER = os.environ.get('DB_USER', 'your_db_user')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'your_db_password')
@@ -17,9 +12,6 @@ DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_PORT = os.environ.get('DB_PORT', '5432')
 
 def get_db_connection():
-    """
-    Establishes and returns a connection to the PostgreSQL database.
-    """
     conn = None
     try:
         conn = psycopg2.connect(
@@ -36,10 +28,6 @@ def get_db_connection():
         return None
 
 def setup_database():
-    """
-    Creates the transactions table if it doesn't exist.
-    This function should be called once on application startup.
-    """
     conn = get_db_connection()
     if conn:
         try:
@@ -64,9 +52,6 @@ def setup_database():
             conn.close()
 
 def save_transaction(protocol, amount, auth_code, transaction_type, status, tx_hash=None):
-    """
-    Saves a transaction record to the PostgreSQL database.
-    """
     conn = get_db_connection()
     if conn:
         try:
@@ -87,9 +72,6 @@ def save_transaction(protocol, amount, auth_code, transaction_type, status, tx_h
     return False
 
 def get_transaction_history():
-    """
-    Retrieves the full transaction history from the PostgreSQL database.
-    """
     conn = get_db_connection()
     history = []
     if conn:

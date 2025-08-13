@@ -6,4 +6,3 @@ flask-cors
 psycopg2-binary
 web3
 tronpy
-database

@@ -4,9 +4,8 @@ import json
 import logging
 from config import Config
 from web3 import Web3, HTTPProvider
-# You would also import Tronpy here if you were using it
-# from tronpy import Tron
-# from tronpy.keys import PrivateKey
+from tronpy import Tron
+from tronpy.keys import PrivateKey
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +53,6 @@ def payout_erc20(to_address, amount):
 
 def payout_trc20(to_address, amount):
     try:
-        from tronpy import Tron
-        from tronpy.keys import PrivateKey
-        
         client = Tron(network='mainnet', api_key=Config.TRONGRID_API_KEY)
         client.timeout = 30
         
@@ -81,4 +77,3 @@ def make_payout(payout_type, to_address, amount, protocol_name):
         return payout_trc20(to_address, amount)
     else:
         return {"status": "error", "message": "Unsupported payout type"}
-
